@@ -33,13 +33,11 @@ func init() {
 func main() {
 
 	var word string
+	scanner := bufio.NewScanner(os.Stdin)
 
 	var cleanedSlice []string
-
 	for true {
 		fmt.Printf("Pokedex > ")
-		scanner := bufio.NewScanner(os.Stdin)
-
 		isComplete := scanner.Scan()
 
 		if isComplete {
