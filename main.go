@@ -1,12 +1,35 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
+	"os"
 	"strings"
 )
 
 func main() {
-	fmt.Println("Hello, World!")
+
+	var word string
+
+	var cleanedSlice []string
+
+	for true {
+		fmt.Printf("Pokedex > ")
+		scanner := bufio.NewScanner(os.Stdin)
+
+		isComplete := scanner.Scan()
+
+		if isComplete {
+			word = scanner.Text()
+			cleanedSlice = cleanInput(word)
+
+			if len(cleanedSlice) > 0 {
+				fmt.Printf("Your command was: %s\n", cleanedSlice[0])
+			}
+
+		}
+
+	}
 }
 
 func cleanInput(text string) []string {
@@ -18,6 +41,5 @@ func cleanInput(text string) []string {
 		values = append(values, strings.ToLower(s))
 	}
 
-	fmt.Print(len(values))
 	return values
 }
