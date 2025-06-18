@@ -413,6 +413,12 @@ func init() {
 			callback:    commandCatch,
 			config:      c,
 		},
+		"pokedex": {
+			name:        "pokedex",
+			description: "Pokedex",
+			callback:    commandPokedex,
+			config:      c,
+		},
 		"help": {
 			name:        "help",
 			description: "Displays a help message",
@@ -659,18 +665,32 @@ func commandCatch(pokemonName string) error {
 	if attemptedCatches[pokemonName] == 4 {
 		bag[pokemonName] = pokemon
 	} else if pokemon.BaseExperience < 100 && rand.Float64() < 0.90{
-			fmt.Printf("%v was caught!\n", pokemonName)
+			fmt.Printf("%v was caught!\nYou may now inspect it with the inspect command.\n", pokemonName)
+		bag[pokemonName] = pokemon
 
 	} else if pokemon.BaseExperience < 200 && rand.Float64() < 0.75 {
 			fmt.Printf("%v was caught!\n", pokemonName)
+			bag[pokemonName] = pokemon
+
 	} else if pokemon.BaseExperience < 300 && rand.Float64() < 0.5  {
 		fmt.Printf("%v was caught!\n", pokemonName)
+			bag[pokemonName] = pokemon
 	} else if pokemon.BaseExperience >= 300 && rand.Float64() < 0.25 {
 			fmt.Printf("%v was caught!\n", pokemonName)
+			bag[pokemonName] = pokemon
 	} else {
 		fmt.Printf("%v escaped!\n", pokemonName)
 		attemptedCatches[pokemonName] += 1
 	}
 
+	return nil
+}
+
+func commandPokedex(ignoreArg string) error {
+	fmt.Printf("Your Pokedex:\n")
+
+	for key, _ := range bag {
+		fmt.Printf(" - %v\n", key)
+	}
 	return nil
 }
