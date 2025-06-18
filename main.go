@@ -419,6 +419,12 @@ func init() {
 			callback:    commandPokedex,
 			config:      c,
 		},
+		"inspect": {
+			name:        "inspect",
+			description: "inspect the pokemon",
+			callback:    commandInspect,
+			config:      c,
+		},
 		"help": {
 			name:        "help",
 			description: "Displays a help message",
@@ -493,9 +499,10 @@ func commandLocationAreaNext(area_name string) error {
 
 	if config.Next == nil {
 		config.Next = &basedUrl
+		config.Previous = nil
 	}
 
-	cacheRes, ok := cache.Get(basedUrl)
+	cacheRes, ok := cache.Get(*config.Next)
 
 	var locationArea locationArea
 	var err error
@@ -517,18 +524,21 @@ func commandLocationAreaNext(area_name string) error {
 		}
 	}
 
-	config.Previous = config.Next
+	config.Previous = locationArea.Previous
 	config.Next = locationArea.Next
-
-	//decoder := json.NewDecoder(res.Body)
-
-	//err = decoder.Decode(&locationArea)
 
 	return nil
 }
 
 func fetchHelper(url string) ([]byte, error) {
 	client := &http.Client{}
+
+	cacheRes, ok := cache.Get(url)
+
+	if ok {
+		return cacheRes, nil
+	}
+
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -546,6 +556,8 @@ func fetchHelper(url string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	cache.Add(url, bytes)
 
 	return bytes, nil
 }
@@ -569,17 +581,17 @@ func printHelper(val []byte) (locationArea, error) {
 
 func commandLocationAreaPrevious(area_name string) error {
 
-	config := commands["map"].config
-
+	config := commands["mapb"].config
+	
 	basedUrl := "https://pokeapi.co/api/v2/location-area/"
-	config.Next = &basedUrl
 
 	if config.Previous == nil {
-		fmt.Println("you're )on the first page")
+		fmt.Println("you're on the first page")
+		config.Next = &basedUrl
 		return nil
 	}
 
-	cacheRes, ok := cache.Get(basedUrl)
+	cacheRes, ok := cache.Get(*config.Previous)
 
 	var locationArea locationArea
 	var err error
@@ -590,7 +602,7 @@ func commandLocationAreaPrevious(area_name string) error {
 			return err
 		}
 	} else {
-		bytes, err := fetchHelper(*config.Next)
+		bytes, err := fetchHelper(*config.Previous)
 		if err != nil {
 			return err
 		}
@@ -602,7 +614,8 @@ func commandLocationAreaPrevious(area_name string) error {
 	}
 
 	config.Previous = locationArea.Previous
-	config.Next = config.Previous
+	config.Next = locationArea.Next
+
 	return nil
 }
 
@@ -649,7 +662,7 @@ var attemptedCatches map[string]int = map[string]int{}
 
 func commandCatch(pokemonName string) error {
 
-	url := "https://pokeapi.co/api/v2/pokemon/{id or name}"
+	url := "https://pokeapi.co/api/v2/pokemon/" + pokemonName
 
 	resBytes, err := fetchHelper(url)
 	if err != nil {
@@ -692,5 +705,53 @@ func commandPokedex(ignoreArg string) error {
 	for key, _ := range bag {
 		fmt.Printf(" - %v\n", key)
 	}
+	return nil
+}
+
+func commandInspect(pokemonName string) error {
+	
+	pokemon, ok := bag[pokemonName]
+
+	if !ok {
+		return nil
+	}
+
+	fmt.Printf(`
+Name: %v
+Height: %v
+Weight: %v
+`, pokemonName, pokemon.Height, pokemon.Weight);
+
+
+	fmt.Println("Stats:")
+	interestedStats := map[string]int{
+		"hp" : 0,
+		"attack": 0,
+		"defense": 0,
+		"special-attack": 0,
+		"special-defense": 0,
+		"speed": 0,
+	}
+
+	for _, stat := range pokemon.Stats {
+
+		_, ok := interestedStats[stat.Stat.Name]
+
+		if ok {
+			interestedStats[stat.Stat.Name] = stat.BaseStat
+		}
+	}
+
+	for key, value := range interestedStats {
+		fmt.Printf(" -%s: %v\n", key, value)
+	}
+
+
+	fmt.Println("Types:")
+	
+	for _, t := range pokemon.Types {
+		fmt.Printf(" - %s\n", t.Type.Name)
+	}
+
 	return nil
 }
